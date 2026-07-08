@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIA Agent CRM</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app">
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">🛡️</div>
+      <div class="brand-text">
+        <strong>Agent CRM</strong>
+        <span data-i18n="brandSub">ระบบจัดการลูกค้าประกัน</span>
+      </div>
+    </div>
+    <nav id="nav">
+      <button class="nav-item active" data-view="dashboard"><span>📊</span><span data-i18n="navDashboard">แดชบอร์ด</span></button>
+      <button class="nav-item" data-view="customers"><span>👥</span><span data-i18n="navCustomers">ลูกค้า</span></button>
+      <button class="nav-item" data-view="map"><span>🗺️</span><span data-i18n="navMap">แผนที่ลูกค้า</span></button>
+      <button class="nav-item" data-view="reminders"><span>🔔</span><span data-i18n="navReminders">การแจ้งเตือน</span><span class="badge" id="reminderBadge" hidden></span></button>
+      <button class="nav-item" data-view="policies"><span>📄</span><span data-i18n="navPolicies">กรมธรรม์</span></button>
+      <button class="nav-item" data-view="claims"><span>🏥</span><span data-i18n="navClaims">เคลม</span></button>
+      <button class="nav-item" data-view="finance"><span>🧮</span><span data-i18n="navFinance">เครื่องมือการเงิน</span></button>
+      <button class="nav-item" data-view="ai"><span>🤖</span><span data-i18n="navAI">ผู้ช่วย AI</span></button>
+      <button class="nav-item" data-view="settings"><span>⚙️</span><span data-i18n="navSettings">ตั้งค่า</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="langToggle" class="btn btn-ghost btn-sm">EN</button>
+      <span id="storageStatus" class="storage-status" title="">●</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main id="main">
+    <div id="storageBanner" class="banner" hidden>
+      <span data-i18n="storageBannerText">ข้อมูลถูกเก็บในเครื่องชั่วคราว — เชื่อมต่อ Supabase ในหน้าตั้งค่าเพื่อบันทึกบนคลาวด์</span>
+      <button class="btn btn-sm" data-view-link="settings" data-i18n="goSettings">ไปที่ตั้งค่า</button>
+    </div>
+
+    <!-- Dashboard -->
+    <section id="view-dashboard" class="view active">
+      <h1 data-i18n="navDashboard">แดชบอร์ด</h1>
+      <div class="stat-grid" id="dashStats"></div>
+      <div class="dash-cols">
+        <div class="card">
+          <h3 data-i18n="dashUpcoming">แจ้งเตือนที่ใกล้ถึง</h3>
+          <div id="dashReminders"></div>
+        </div>
+        <div class="card">
+          <h3 data-i18n="dashRecentCustomers">ลูกค้าล่าสุด</h3>
+          <div id="dashCustomers"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customers -->
+    <section id="view-customers" class="view">
+      <div class="view-header">
+        <h1 data-i18n="navCustomers">ลูกค้า</h1>
+        <div class="view-actions">
+          <input id="customerSearch" type="search" data-i18n-ph="searchCustomers" placeholder="ค้นหาลูกค้า...">
+          <button class="btn btn-primary" id="btnAddCustomer" data-i18n="addCustomer">+ เพิ่มลูกค้า</button>
+        </div>
+      </div>
+      <div class="filter-row" id="customerFilters"></div>
+      <div id="customerList" class="card-list"></div>
+    </section>
+
+    <!-- Map -->
+    <section id="view-map" class="view">
+      <div class="view-header">
+        <h1 data-i18n="navMap">แผนที่ลูกค้า</h1>
+        <div class="view-actions">
+          <label class="toggle-label"><input type="checkbox" id="mapAddMode"> <span data-i18n="mapAddMode">โหมดปักหมุดลูกค้าใหม่</span></label>
+        </div>
+      </div>
+      <div class="map-legend" id="mapLegend"></div>
+      <div id="mapContainer"></div>
+    </section>
+
+    <!-- Reminders -->
+    <section id="view-reminders" class="view">
+      <div class="view-header">
+        <h1 data-i18n="navReminders">การแจ้งเตือน</h1>
+        <button class="btn btn-primary" id="btnAddReminder" data-i18n="addReminder">+ เพิ่มการแจ้งเตือน</button>
+      </div>
+      <div id="reminderList" class="card-list"></div>
+    </section>
+
+    <!-- Policies -->
+    <section id="view-policies" class="view">
+      <div class="view-header">
+        <h1 data-i18n="navPolicies">กรมธรรม์</h1>
+        <button class="btn btn-primary" id="btnAddPolicy" data-i18n="addPolicy">+ เพิ่มกรมธรรม์</button>
+      </div>
+      <div id="policyList" class="card-list"></div>
+    </section>
+
+    <!-- Claims -->
+    <section id="view-claims" class="view">
+      <div class="view-header">
+        <h1 data-i18n="navClaims">ฐานข้อมูลเคลม</h1>
+        <button class="btn btn-primary" id="btnAddClaim" data-i18n="addClaim">+ บันทึกเคลม</button>
+      </div>
+      <div id="claimList" class="card-list"></div>
+    </section>
+
+    <!-- Finance tools -->
+    <section id="view-finance" class="view">
+      <h1 data-i18n="navFinance">เครื่องมือการเงิน</h1>
+      <div class="tabs" id="financeTabs">
+        <button class="tab active" data-tab="tax" data-i18n="tabTax">ภาษีเงินได้บุคคลธรรมดา</button>
+        <button class="tab" data-tab="irr" data-i18n="tabIRR">คำนวณ IRR</button>
+        <button class="tab" data-tab="invest" data-i18n="tabInvest">การลงทุน</button>
+      </div>
+
+      <div id="tab-tax" class="tab-panel active card">
+        <h3 data-i18n="taxTitle">คำนวณภาษีเงินได้บุคคลธรรมดา (ปีภาษีไทย)</h3>
+        <div class="form-grid">
+          <label><span data-i18n="taxIncome">เงินได้ทั้งปี (บาท)</span><input type="number" id="taxIncome" value="600000"></label>
+          <label><span data-i18n="taxExpense">หักค่าใช้จ่าย (สูงสุด 100,000)</span><input type="number" id="taxExpense" value="100000"></label>
+          <label><span data-i18n="taxPersonal">ลดหย่อนส่วนตัว</span><input type="number" id="taxPersonal" value="60000"></label>
+          <label><span data-i18n="taxInsurance">เบี้ยประกันชีวิต (สูงสุด 100,000)</span><input type="number" id="taxLife" value="0"></label>
+          <label><span data-i18n="taxHealth">เบี้ยประกันสุขภาพ (สูงสุด 25,000)</span><input type="number" id="taxHealth" value="0"></label>
+          <label><span data-i18n="taxOther">ลดหย่อนอื่น ๆ (กองทุน/บริจาค ฯลฯ)</span><input type="number" id="taxOther" value="0"></label>
+        </div>
+        <button class="btn btn-primary" id="btnCalcTax" data-i18n="calc">คำนวณ</button>
+        <div id="taxResult" class="result-box" hidden></div>
+      </div>
+
+      <div id="tab-irr" class="tab-panel card">
+        <h3 data-i18n="irrTitle">คำนวณ IRR จากกระแสเงินสด</h3>
+        <p class="hint" data-i18n="irrHint">ใส่กระแสเงินสดต่อปี คั่นด้วยเครื่องหมายจุลภาค เริ่มจากเงินจ่ายออก (ติดลบ) เช่น เบี้ยที่จ่าย -50000 ต่อปี 5 ปี แล้วรับคืน</p>
+        <textarea id="irrCashflows" rows="3" placeholder="-50000, -50000, -50000, -50000, -50000, 0, 0, 0, 0, 300000"></textarea>
+        <button class="btn btn-primary" id="btnCalcIRR" data-i18n="calc">คำนวณ</button>
+        <div id="irrResult" class="result-box" hidden></div>
+      </div>
+
+      <div id="tab-invest" class="tab-panel card">
+        <h3 data-i18n="investTitle">เครื่องคำนวณการลงทุน (ดอกเบี้ยทบต้น)</h3>
+        <div class="form-grid">
+          <label><span data-i18n="investPrincipal">เงินต้น (บาท)</span><input type="number" id="invPrincipal" value="100000"></label>
+          <label><span data-i18n="investMonthly">ออมเพิ่มต่อเดือน (บาท)</span><input type="number" id="invMonthly" value="5000"></label>
+          <label><span data-i18n="investRate">ผลตอบแทนต่อปี (%)</span><input type="number" id="invRate" value="5" step="0.1"></label>
+          <label><span data-i18n="investYears">ระยะเวลา (ปี)</span><input type="number" id="invYears" value="10"></label>
+        </div>
+        <button class="btn btn-primary" id="btnCalcInvest" data-i18n="calc">คำนวณ</button>
+        <div id="investResult" class="result-box" hidden></div>
+      </div>
+    </section>
+
+    <!-- AI -->
+    <section id="view-ai" class="view">
+      <h1 data-i18n="navAI">ผู้ช่วย AI</h1>
+      <div id="aiNoKey" class="banner" hidden>
+        <span data-i18n="aiNoKey">ยังไม่ได้ใส่ Claude API Key — ไปที่หน้าตั้งค่าเพื่อเปิดใช้งาน AI</span>
+        <button class="btn btn-sm" data-view-link="settings" data-i18n="goSettings">ไปที่ตั้งค่า</button>
+      </div>
+      <div class="ai-layout">
+        <div class="card ai-chat">
+          <div id="aiMessages" class="ai-messages"></div>
+          <div class="ai-input-row">
+            <textarea id="aiInput" rows="2" data-i18n-ph="aiPlaceholder" placeholder="ถาม AI เช่น สรุปกรมธรรม์ของลูกค้า, ร่างข้อความแจ้งต่ออายุ..."></textarea>
+            <button class="btn btn-primary" id="btnAiSend" data-i18n="send">ส่ง</button>
+          </div>
+        </div>
+        <div class="card ai-shortcuts">
+          <h3 data-i18n="aiShortcuts">คำสั่งด่วน</h3>
+          <button class="btn btn-ghost ai-quick" data-prompt="summarize" data-i18n="aiQuickSummary">สรุปภาพรวมลูกค้าทั้งหมด</button>
+          <button class="btn btn-ghost ai-quick" data-prompt="renewals" data-i18n="aiQuickRenewals">ใครใกล้ถึงวันต่ออายุบ้าง</button>
+          <button class="btn btn-ghost ai-quick" data-prompt="draft" data-i18n="aiQuickDraft">ร่างข้อความแจ้งเตือนต่ออายุ</button>
+          <button class="btn btn-ghost ai-quick" data-prompt="claims" data-i18n="aiQuickClaims">วิเคราะห์ประวัติเคลม</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="view-settings" class="view">
+      <h1 data-i18n="navSettings">ตั้งค่า</h1>
+      <div class="card">
+        <h3>Supabase (Cloud Database)</h3>
+        <p class="hint" data-i18n="supabaseHint">สมัครฟรีที่ supabase.com สร้างโปรเจกต์ แล้วรัน supabase-schema.sql ใน SQL Editor จากนั้นวาง URL และ anon key ที่นี่</p>
+        <div class="form-grid">
+          <label><span>Supabase URL</span><input type="text" id="setSupabaseUrl" placeholder="https://xxxx.supabase.co"></label>
+          <label><span>Supabase anon key</span><input type="password" id="setSupabaseKey" placeholder="eyJ..."></label>
+        </div>
+        <button class="btn btn-primary" id="btnSaveSupabase" data-i18n="saveConnect">บันทึกและเชื่อมต่อ</button>
+        <span id="supabaseStatus" class="hint"></span>
+      </div>
+      <div class="card">
+        <h3>Claude AI</h3>
+        <p class="hint" data-i18n="claudeHint">สร้าง API key ได้ที่ platform.claude.com — key จะถูกเก็บไว้ในเครื่องคุณเท่านั้น</p>
+        <div class="form-grid">
+          <label><span>Claude API Key</span><input type="password" id="setClaudeKey" placeholder="sk-ant-..."></label>
+          <label><span data-i18n="aiModel">โมเดล</span>
+            <select id="setClaudeModel">
+              <option value="claude-sonnet-5" selected>Claude Sonnet 5 (แนะนำ)</option>
+              <option value="claude-haiku-4-5">Claude Haiku 4.5 (ประหยัดสุด)</option>
+              <option value="claude-opus-4-8">Claude Opus 4.8 (ฉลาดสุด)</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-primary" id="btnSaveClaude" data-i18n="save">บันทึก</button>
+        <span id="claudeStatus" class="hint"></span>
+      </div>
+      <div class="card">
+        <h3 data-i18n="backupTitle">สำรองข้อมูล</h3>
+        <button class="btn" id="btnExport" data-i18n="exportData">ดาวน์โหลดข้อมูลทั้งหมด (JSON)</button>
+        <button class="btn" id="btnImport" data-i18n="importData">นำเข้าข้อมูลจากไฟล์</button>
+        <input type="file" id="importFile" accept=".json" hidden>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Modal -->
+<div id="modalOverlay" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle"></h2>
+      <button class="btn btn-ghost" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="i18n.js"></script>
+<script src="store.js"></script>
+<script src="finance.js"></script>
+<script src="map.js"></script>
+<script src="ai.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
