@@ -121,7 +121,7 @@ const App = {
           <div class="item-sub">${esc(c.phone || "")} · ${t("type" + cap(c.type))} · ${Store.list("policies").filter(p => p.customer_id === c.id).length} ${t("navPolicies")}</div>
         </div>
         ${c.lat ? `<button class="btn btn-sm" onclick="event.stopPropagation();CustomerMap.focusCustomer('${c.id}')">🗺️</button>` : ""}
-      </div>`).join("") : `<span class="hint">${t("noData")}</span>`;
+      </div>`).join("") : this.emptyState("👥", t("addCustomer"), "App.openCustomerForm()");
   },
 
   renderReminders() {
@@ -141,7 +141,7 @@ const App = {
           <button class="btn btn-sm btn-danger" onclick="App.deleteRow('reminders','${r.id}')">${t("delete")}</button>
         </div>
       </div>`;
-    }).join("") : `<span class="hint">${t("noData")}</span>`;
+    }).join("") : this.emptyState("🔔", t("addReminder"), "App.openReminderForm()");
   },
 
   renderPolicies() {
@@ -155,7 +155,7 @@ const App = {
         </div>
         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteRow('policies','${p.id}')">${t("delete")}</button>
       </div>`;
-    }).join("") : `<span class="hint">${t("noData")}</span>`;
+    }).join("") : this.emptyState("📄", t("addPolicy"), "App.openPolicyForm()");
   },
 
   renderClaims() {
@@ -171,7 +171,12 @@ const App = {
         <span class="chip" style="background:${colors[cl.status] || "#8a93a0"}">${t("claim" + cap(cl.status))}</span>
         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();App.deleteRow('claims','${cl.id}')">${t("delete")}</button>
       </div>`;
-    }).join("") : `<span class="hint">${t("noData")}</span>`;
+    }).join("") : this.emptyState("🏥", t("addClaim"), "App.openClaimForm()");
+  },
+
+  emptyState(emoji, btnLabel, onclick) {
+    return `<div class="empty-state"><span class="emoji">${emoji}</span>${t("noData")}<br>
+      <button class="btn btn-primary" onclick="${onclick}">${btnLabel}</button></div>`;
   },
 
   async deleteRow(tbl, id) {
